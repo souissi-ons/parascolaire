@@ -24,40 +24,37 @@ import { ChangePasswordDto } from './dto/change-password.dto';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Public()
   @Post()
+  @Roles('admin')
   create(@Body() createUserDto: CreateUserDto) {
     return this.userService.create(createUserDto);
   }
 
-  @Public()
   @Get()
-  // @Roles('admin', 'student')
+  @Roles('admin')
   findAll() {
     return this.userService.findAll();
   }
 
-  @Public()
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.userService.findOne(+id);
   }
 
-  @Public()
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     return this.userService.update(+id, updateUserDto);
   }
 
-  @Public()
   @Delete(':id')
+  @Roles('admin')
   remove(@Param('id') id: string) {
     return this.userService.remove(+id);
   }
 
   @Patch('change-password/:id')
   async changePassword(
-    @Param('id') id: string, // Attend un paramètre nommé "id" dans l'URL
+    @Param('id') id: string,
     @Body() changePasswordDto: ChangePasswordDto,
   ): Promise<string> {
     return await this.userService.changePassword(+id, changePasswordDto);
