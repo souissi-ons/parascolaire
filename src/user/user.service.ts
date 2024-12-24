@@ -66,23 +66,51 @@ export class UserService {
   }
 
   async update(id: number, updateUserDto: UpdateUserDto) {
-    const existingUser = await this.findOne(id);
-
-    const OtherUser = await this.userRep.findOne({
-      where: {
-        email: updateUserDto.email,
-        phone: updateUserDto.phone,
-        id: Not(id),
-      },
-    });
-    if (OtherUser) {
+    if ('password' in updateUserDto || 'role' in updateUserDto) {
       throw new HttpException(
         {
           status: HttpStatus.CONFLICT,
-          message: 'User with this email or phone number already exists. ',
+          message: 'Updating password or role is not allowed. ',
         },
         HttpStatus.CONFLICT,
       );
+    }
+
+    const existingUser = await this.findOne(id);
+
+    if (updateUserDto.email) {
+      const OtherUser = await this.userRep.findOne({
+        where: {
+          email: updateUserDto.email,
+          id: Not(id),
+        },
+      });
+      if (OtherUser) {
+        throw new HttpException(
+          {
+            status: HttpStatus.CONFLICT,
+            message: 'User with this email already exists. ',
+          },
+          HttpStatus.CONFLICT,
+        );
+      }
+    }
+    if (updateUserDto.phone) {
+      const OtherUser = await this.userRep.findOne({
+        where: {
+          phone: updateUserDto.phone,
+          id: Not(id),
+        },
+      });
+      if (OtherUser) {
+        throw new HttpException(
+          {
+            status: HttpStatus.CONFLICT,
+            message: 'User with this phone number already exists. ',
+          },
+          HttpStatus.CONFLICT,
+        );
+      }
     }
     const updatedUser = { ...existingUser, ...updateUserDto };
     return this.userRep.save(updatedUser);

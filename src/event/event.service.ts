@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  forwardRef,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -7,47 +12,50 @@ import { Repository } from 'typeorm';
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { UserService } from 'src/user/user.service';
 import { ClassroomService } from 'src/classroom/classroom.service';
+import { validateDates } from 'src/utils/validate-date.utils';
+import { RequestClassroomService } from 'src/request-classroom/request-classroom.service';
 
 @Injectable()
 export class EventService {
-  constructor(@InjectRepository(Event) private eventRep: Repository<Event>,
+  constructor(
+    @InjectRepository(Event) private eventRep: Repository<Event>,
     private readonly userService: UserService,
     private readonly classService: ClassroomService,
-  ) { }
+    @Inject(forwardRef(() => RequestClassroomService))
+    private readonly requestClassroomService: RequestClassroomService,
+  ) {}
 
   async create(createEventDto: CreateEventDto) {
-    const conflictingEvent = await this.eventRep
-      .createQueryBuilder('event')
-      .where('event.roomId = :roomId', { roomId: createEventDto.roomId })
-      .andWhere(
-        '(event.startDateTime < :endDateTime AND event.endDateTime > :startDateTime)',
-        {
-          startDateTime: createEventDto.startDateTime,
-          endDateTime: createEventDto.endDateTime,
-        },
-      )
-      .getOne();
-
-    if (conflictingEvent) {
-      throw new HttpException(
-        {
-          status: HttpStatus.CONFLICT,
-          message: 'Un événement existe déjà dans cette salle pendant la plage horaire sélectionnée.',
-        },
-        HttpStatus.CONFLICT,
-      );
-    }
-    if (createEventDto.startDateTime >= createEventDto.endDateTime) {
-      throw new HttpException(
-        {
-          status: HttpStatus.CONFLICT,
-          message: 'La date de début doit être antérieure à la date de fin.',
-        },
-        HttpStatus.CONFLICT,
-      );
-    }
     await this.classService.findOne(createEventDto.roomId);
-    await this.userService.findOne(createEventDto.organizerId);
+
+    const user = await this.userService.findOne(createEventDto.organizerId);
+    if (user.role !== 'club') {
+      throw new HttpException(
+        {
+          status: HttpStatus.CONFLICT,
+          message: "L'organisateur doit être un club. ",
+        },
+        HttpStatus.CONFLICT,
+      );
+    }
+
+    // Vérification de la validité de la date
+    validateDates(createEventDto.startDateTime, createEventDto.endDateTime);
+
+    // // Vérification des conflits avec des demandes acceptées
+    await this.requestClassroomService.checkForConflicts(
+      createEventDto.roomId,
+      createEventDto.startDateTime,
+      createEventDto.endDateTime,
+    );
+
+    // Vérification des conflits avec des événements acceptés
+    await this.findConflictingEvent(
+      createEventDto.roomId,
+      createEventDto.startDateTime,
+      createEventDto.endDateTime,
+    );
+
     // Create and save the new event if no conflict is found
     const newEvent = this.eventRep.create(createEventDto);
     return this.eventRep.save(newEvent);
@@ -69,7 +77,10 @@ export class EventService {
     const existingEvent = await this.findOne(id);
     const conflictingEvent = await this.eventRep
       .createQueryBuilder('event')
-      .where('event.roomId = :roomId AND event.id != :id', { roomId: updateEventDto.roomId, id:id })
+      .where('event.roomId = :roomId AND event.id != :id', {
+        roomId: updateEventDto.roomId,
+        id: id,
+      })
       .andWhere(
         '(event.startDateTime < :endDateTime AND event.endDateTime > :startDateTime)',
         {
@@ -83,7 +94,8 @@ export class EventService {
       throw new HttpException(
         {
           status: HttpStatus.CONFLICT,
-          message: 'Un événement existe déjà dans cette salle pendant la plage horaire sélectionnée.',
+          message:
+            'Un événement existe déjà dans cette salle pendant la plage horaire sélectionnée.',
         },
         HttpStatus.CONFLICT,
       );
@@ -101,6 +113,35 @@ export class EventService {
     await this.userService.findOne(updateEventDto.organizerId);
     const updatedEvent = { ...existingEvent, ...updateEventDto };
     return this.eventRep.save(updatedEvent);
+  }
+
+  async findConflictingEvent(
+    roomId: number,
+    startDateTimeVar: Date,
+    endDateTimeVar: Date,
+  ): Promise<void> {
+    const conflictingEvent = await this.eventRep
+      .createQueryBuilder('event')
+      .where('event.roomId = :roomId', { roomId: roomId })
+      .andWhere('event.status = :status', { status: 'confirmed' })
+      .andWhere(
+        '(event.startDateTime < :endDate AND event.endDateTime > :startDate)',
+        {
+          startDate: startDateTimeVar,
+          endDate: endDateTimeVar,
+        },
+      )
+      .getOne();
+    if (conflictingEvent) {
+      throw new HttpException(
+        {
+          status: HttpStatus.CONFLICT,
+          message:
+            'Un événement accepté existe déjà pour cette salle dans la plage horaire sélectionnée.',
+        },
+        HttpStatus.CONFLICT,
+      );
+    }
   }
 
   async remove(id: number) {

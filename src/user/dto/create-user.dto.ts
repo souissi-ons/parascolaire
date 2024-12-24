@@ -22,11 +22,6 @@ export class CreateUserDto {
   @IsNotEmpty({ message: "L'email est obligatoire." })
   email: string;
 
-  @IsString()
-  @MinLength(6, {
-    message: 'Le mot de passe doit contenir au moins 6 caractères.',
-  })
-  @IsNotEmpty({ message: 'Le mot de passe est obligatoire.' })
   password: string;
 
   @IsNotEmpty({ message: 'Le rôle est obligatoire.' })
