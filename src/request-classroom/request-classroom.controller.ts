@@ -2,7 +2,9 @@ import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/commo
 import { RequestClassroomService } from './request-classroom.service';
 import { CreateRequestClassroomDto } from './dto/create-request-classroom.dto';
 import { UpdateRequestClassroomDto } from './dto/update-request-classroom.dto';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
+@ApiBearerAuth()
 @Controller('request-classroom')
 export class RequestClassroomController {
   constructor(private readonly requestClassroomService: RequestClassroomService) {}

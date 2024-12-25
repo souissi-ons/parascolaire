@@ -2,7 +2,10 @@ import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/commo
 import { ProfilClubService } from './profil-club.service';
 import { CreateProfilClubDto } from './dto/create-profil-club.dto';
 import { UpdateProfilClubDto } from './dto/update-profil-club.dto';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
+
+@ApiBearerAuth()
 @Controller('profil-club')
 export class ProfilClubController {
   constructor(private readonly profilClubService: ProfilClubService) {}
