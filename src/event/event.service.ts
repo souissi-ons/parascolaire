@@ -14,6 +14,8 @@ import { UserService } from 'src/user/user.service';
 import { ClassroomService } from 'src/classroom/classroom.service';
 import { validateDates } from 'src/utils/validate-date.utils';
 import { RequestClassroomService } from 'src/request-classroom/request-classroom.service';
+import { join } from 'path';
+import * as fs from 'fs';
 
 @Injectable()
 export class EventService {
@@ -147,5 +149,29 @@ export class EventService {
   async remove(id: number) {
     await this.findOne(id);
     return this.eventRep.delete({ id });
+  }
+
+  async getImageByEventId(id: number): Promise<string> {
+    // Rechercher l'événement par ID
+    const event = await this.findOne(id);
+    if (!event) {
+      throw new NotFoundException('Event not found');
+    }
+
+    // Construire le chemin absolu vers l'image
+    const imagePath = join(
+      __dirname,
+      '..',
+      '..',
+      event.imageUrl.replace('/', ''),
+    );
+
+    // Vérifier si l'image existe
+    if (!fs.existsSync(imagePath)) {
+      throw new NotFoundException('Image not found');
+    }
+
+    // Retourner le chemin de l'image
+    return imagePath;
   }
 }

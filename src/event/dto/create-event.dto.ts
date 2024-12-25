@@ -1,6 +1,14 @@
-import { ApiProperty } from "@nestjs/swagger";
-import { Transform } from "class-transformer";
-import { IsDate, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, IsTimeZone } from "class-validator";
+import { ApiProperty } from '@nestjs/swagger';
+import { Transform, Type } from 'class-transformer';
+import {
+  IsDate,
+  IsIn,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsTimeZone,
+} from 'class-validator';
 
 export class CreateEventDto {
   @ApiProperty({
@@ -43,6 +51,7 @@ export class CreateEventDto {
     description: 'ID of the room where the event will take place',
     example: 100,
   })
+  @Type(() => Number)
   @IsNumber()
   @IsNotEmpty()
   roomId: number;
@@ -51,6 +60,7 @@ export class CreateEventDto {
     description: 'ID of the event organizer',
     example: 5,
   })
+  @Type(() => Number)
   @IsNumber()
   @IsNotEmpty()
   organizerId: number;
@@ -73,7 +83,8 @@ export class CreateEventDto {
   @IsString()
   @IsNotEmpty()
   @IsIn(['pending', 'confirmed', 'canceled', 'refused'], {
-    message: 'Le statut doit être soit pending, confirmed, canceled ou refused.',
+    message:
+      'Le statut doit être soit pending, confirmed, canceled ou refused.',
   })
   status?: string = 'pending';
 }
