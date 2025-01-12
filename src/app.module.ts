@@ -1,18 +1,19 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { UserModule } from './user/user.module';
-import { AuthModule } from './auth/auth.module';
-import { ClassroomModule } from './classroom/classroom.module';
-import { EventModule } from './event/event.module';
-import { ProfilClubModule } from './profil-club/profil-club.module';
-import { RequestClassroomModule } from './request-classroom/request-classroom.module';
+import { UserModule } from './modules/user/user.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { ClassroomModule } from './modules/classroom/classroom.module';
+import { EventModule } from './modules/event/event.module';
+import { ProfilClubModule } from './modules/profil-club/profil-club.module';
+import { RequestClassroomModule } from './modules/request-classroom/request-classroom.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthCompositeGuard } from './common/guards/auth-composite.guard';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
+import { MembreModule } from './modules/membre/membre.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { RolesGuard } from './common/guards/roles.guard';
     EventModule,
     ProfilClubModule,
     RequestClassroomModule,
+    MembreModule,
     ConfigModule.forRoot(),
     TypeOrmModule.forRoot({
       type: 'mysql',
@@ -31,7 +33,7 @@ import { RolesGuard } from './common/guards/roles.guard';
       password: process.env.DB_PASSWORD,
       database: process.env.DB_DATABASE,
       autoLoadEntities: true,
-      //synchronize: true,
+      synchronize: true,
       timezone: 'Z',
     }),
   ],
