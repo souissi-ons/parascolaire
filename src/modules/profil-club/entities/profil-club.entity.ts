@@ -17,7 +17,7 @@ export class ProfilClub {
   @Column({ unique: true }) // Ajout de la contrainte d'unicité
   userId: number;
 
-  @Column()
+  @Column({ nullable: true })
   imageUrl: string;
 
   @Column()

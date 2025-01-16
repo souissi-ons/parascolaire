@@ -24,7 +24,7 @@ export class CreateProfilClubDto {
     example: 'https://example.com/image.png',
     required: false,
   })
-  @IsUrl()
+  // @IsUrl()
   @IsOptional()
   imageUrl?: string;
 
